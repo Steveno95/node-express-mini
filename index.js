@@ -6,6 +6,10 @@ const greeter = require('./greeter.js')
 const db = require('./data/db.js');
 
 const server = express();
+
+//express middleware
+server.use(express.json());
+
 server.get('/', (req, res) => {
     res.json('alive');
 });
@@ -43,6 +47,62 @@ server.get('/api/users', (req, res) => {
           .json({ message: "we failed you, can't get the user", error: err });
       });
   });
+
+server.post('/api/users', async (req, res) => {
+  try {
+    const userData = req.body;
+    const userId = await db.insert(userData);
+    res.status(201).json(userId);
+  } catch (error) {
+    res.status(500).json({ message: 'error creating user', error });
+  }
+});
+
+/*
+server.post('/api/users', (req, res) => {
+  const userData = req.body;
+  db.insert(req.body)
+    .then(userId => {
+      res.status(201).json(userId);
+      db.findById(userId.id).then(user => {
+
+      })
+      .catch(err => {
+        //error getting one user by id
+      })
+    })
+    .catch(error => {
+      res.status(500).json({ message: 'error creating user', error });
+    });
+});
+*/
+
+server.put('/api/users/:id', (req, res) => {
+  const { id } = req.params;
+  const changes = req.body;
+  db.update(id, changes)
+  .then(count => {
+    if (count) {
+      res.status(200).json({ message: `${count} users updated` });
+    } else {
+      res.status(404).json({ message: 'User not found' })
+    }
+    
+  })
+  .catch(err => {
+    res.status(500).json({ message: 'error deleting user', err });
+  })
+})
+
+server.delete('/api/users/:id', (req, res) => {
+  db.remove(req.params.id)
+    .then(count => {
+      res.status(200).json(count);
+    })
+    .catch(err => {
+      res.status(500).json({ message: 'error deleting user', err });
+    });
+})
 
 server.get('/greet/:person', greeter);
 
