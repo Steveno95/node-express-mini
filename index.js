@@ -48,7 +48,25 @@ server.get('/api/users', (req, res) => {
       });
   });
 
-server.post('/api/users', async (req, res) => {
+  server.post('/api/users', async (req, res) => {
+    console.log('body', req.body);
+    try {
+      const userData = req.body;
+      const userId = await db.insert(userData);
+      const user = await db.findById(userId.id);
+      res.status(201).json(user);
+    } catch (error) {
+      let message = 'error creating the user';
+  
+      if (error.errno === 19) {
+        message = 'please provide both the name and the bio';
+      }
+  
+      res.status(500).json({ message, error });
+    }
+  });
+
+/*server.post('/api/users', async (req, res) => {
   try {
     const userData = req.body;
     const userId = await db.insert(userData);
@@ -56,7 +74,7 @@ server.post('/api/users', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'error creating user', error });
   }
-});
+});*/
 
 /*
 server.post('/api/users', (req, res) => {
@@ -64,11 +82,11 @@ server.post('/api/users', (req, res) => {
   db.insert(req.body)
     .then(userId => {
       res.status(201).json(userId);
-      db.findById(userId.id).then(user => {
+      db.getById(userId.id).then(user => {
 
       })
       .catch(err => {
-        //error getting one user by id
+        // error getting one user by id
       })
     })
     .catch(error => {
@@ -92,7 +110,7 @@ server.put('/api/users/:id', (req, res) => {
   .catch(err => {
     res.status(500).json({ message: 'error deleting user', err });
   })
-})
+});
 
 server.delete('/api/users/:id', (req, res) => {
   db.remove(req.params.id)
@@ -102,8 +120,20 @@ server.delete('/api/users/:id', (req, res) => {
     .catch(err => {
       res.status(500).json({ message: 'error deleting user', err });
     });
-})
+});
+
+server.get('/users', (req, res) => {
+  console.dir(req, { depth: 1 });
+  const { id } = req.query;
+
+  if (id) {
+    db.findById(id).then(users => res.send(users));
+  } else {
+    db.find().then(users => res.send(users));
+  }
+});
 
 server.get('/greet/:person', greeter);
 
+// google.com/search ? q = timer & tbs=qdr & tbo=1
 server.listen(9000, () => console.log('the server is alive'));
